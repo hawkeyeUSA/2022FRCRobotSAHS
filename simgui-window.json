@@ -1,0 +1,70 @@
+{
+  "MainWindow": {
+    "GLOBAL": {
+      "height": "705",
+      "maximized": "0",
+      "style": "0",
+      "userScale": "3",
+      "width": "1366",
+      "xpos": "-8",
+      "ypos": "62"
+    }
+  },
+  "Window": {
+    "###/LiveWindow/Ungrouped/DifferentialDrive[1]": {
+      "Collapsed": "0",
+      "Pos": "1046,407",
+      "Size": "300,307"
+    },
+    "###Analog Inputs": {
+      "Collapsed": "0",
+      "Pos": "552,91",
+      "Size": "315,80"
+    },
+    "###FMS": {
+      "Collapsed": "0",
+      "Pos": "14,441",
+      "Size": "202,214"
+    },
+    "###Joysticks": {
+      "Collapsed": "0",
+      "Pos": "258,192",
+      "Size": "976,232"
+    },
+    "###NetworkTables": {
+      "Collapsed": "0",
+      "Pos": "277,32",
+      "Size": "750,146"
+    },
+    "###Other Devices": {
+      "Collapsed": "0",
+      "Pos": "1025,20",
+      "Size": "250,695"
+    },
+    "###RoboRIO": {
+      "Collapsed": "0",
+      "Pos": "208,197",
+      "Size": "141,164"
+    },
+    "###System Joysticks": {
+      "Collapsed": "0",
+      "Pos": "5,178",
+      "Size": "232,254"
+    },
+    "###Timing": {
+      "Collapsed": "0",
+      "Pos": "4,25",
+      "Size": "162,142"
+    },
+    "Debug##Default": {
+      "Collapsed": "0",
+      "Pos": "60,60",
+      "Size": "400,400"
+    },
+    "Robot State": {
+      "Collapsed": "0",
+      "Pos": "5,20",
+      "Size": "57,78"
+    }
+  }
+}
