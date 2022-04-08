@@ -14,7 +14,6 @@ import com.ctre.phoenix.motorcontrol.can.WPI_TalonSRX;
 import edu.wpi.first.wpilibj.AnalogInput;
 import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.PneumaticsModuleType;
-import edu.wpi.first.wpilibj.Compressor;
 import edu.wpi.first.wpilibj.Solenoid;
 import edu.wpi.first.wpilibj.TimedRobot;
 // import edu.wpi.first.wpilibj.Timer;0
@@ -29,8 +28,6 @@ import edu.wpi.first.wpilibj.drive.DifferentialDrive;
  */
 public class Robot extends TimedRobot 
 {
-
-  double tiem;
     private Joystick stick = new Joystick(0);
     // private Joystick buttons = new Joystick(1);
 
@@ -210,7 +207,7 @@ public class Robot extends TimedRobot
       
         // Adjust speed to tune movements
         turn = turn * speed;
-        move = move * speed;
+        move = move * 0.9 * speed;
 
         //  System.out.println("Move Speed: " + (move));
         //  System.out.println("Turn Speed: " + (turn));
@@ -225,7 +222,7 @@ public class Robot extends TimedRobot
     //
     private void HandleHangArmState(Joystick stick) 
     {
-        double moveSpeed = 4.5;
+        double moveSpeed = 4.0;
 
         // Only activate forward/reverse motors when buttons are pressed:
         // Button-4 - Lower arms
@@ -245,7 +242,7 @@ public class Robot extends TimedRobot
             //Move the motors down
             if (stick.getRawButton(4))
             {
-                armMotor_Right.set(-moveSpeed/4 );
+                armMotor_Right.set(-moveSpeed/4);
                 armMotor_Left.set(-moveSpeed);
                 System.out.println("DOWN Arm Speed: L(" + armMotor_Left.get() + ") R(" + armMotor_Right.get() + ")");
             }
@@ -345,17 +342,11 @@ public class Robot extends TimedRobot
     public void autonomousInit() 
     {
       // startTime = Timer.getFPGATimestamp();
-     tiem = System.currentTimeMillis();
-
-
     }
 
     @Override
     public void autonomousPeriodic() 
     {
-      while (System.currentTimeMillis()> tiem +4000) { _drive.arcadeDrive(.40, 0);
-          wai````
-      } 
       // double currentTime = Timer.getFPGATimestamp();
       // double time = currentTime - startTime;
 
