@@ -305,6 +305,7 @@ public class Robot extends TimedRobot
     @Override
     public void autonomousPeriodic() 
     {
+      double reverseSpeed = -0.5;
       long timeDiffSecs = 0;
       long currentTime = System.currentTimeMillis();
 
@@ -326,8 +327,8 @@ public class Robot extends TimedRobot
       timeDiffSecs = (_autonomousStopDriveTime - currentTime) / 1000;
       if (currentTime < _autonomousStopDriveTime)
       {
-          _drive.arcadeDrive(-0.5, 0);
-          System.out.println("Autonomous drive running for " + timeDiffSecs + " seconds");
+          _drive.arcadeDrive(reverseSpeed, 0);
+          System.out.println("Autonomous drive (speed:" + reverseSpeed + ") running for " + timeDiffSecs + " seconds");
       }
       else {
           _drive.arcadeDrive(0, 0);
