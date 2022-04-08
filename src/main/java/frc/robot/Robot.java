@@ -52,10 +52,14 @@ public class Robot extends TimedRobot
 
 
     // Variable to bypass trigger pull and release to keep bucket raised
-    private boolean keepBucketArmRaised = false;
+    private boolean _keepBucketArmRaised = false;
     // Variable to help determine state of bucket arm raised or lowered 
-    private boolean IsBucketArmRaised = false;
+    private boolean _IsBucketArmRaised = false;
     
+    // Time Variables for Autonomous drive
+    private long _autonomousDriveStartTime;
+    private long _autonomousStopDriveTime;
+
     // private double startTime;
     //private static final double kHoldDistance = 12.0; //These are for Distance Sensors
     //private static final double kValueToInches = 0.125;
@@ -100,7 +104,7 @@ public class Robot extends TimedRobot
 
 
       // Set Bucket Arm State from Trigger pulled and released Event
-      if (!keepBucketArmRaised)
+      if (!_keepBucketArmRaised)
       {
           SetBucketArmState(stick.getRawButton(1));
       }
@@ -108,13 +112,13 @@ public class Robot extends TimedRobot
       // Handle Button-11 Event (Raise bucket arm)
       if (stick.getRawButton(7))
       {
-        keepBucketArmRaised = true;
+        _keepBucketArmRaised = true;
           SetBucketArmState(true);
       }
       // Handle Button-12 Event (Lower bucket arm)
       if (stick.getRawButton(8))
       {
-        keepBucketArmRaised = false;
+        _keepBucketArmRaised = false;
         SetBucketArmState(false);
       }
 
@@ -139,56 +143,6 @@ public class Robot extends TimedRobot
       //     System.out.println("Button " + btnCtr + " Pressed.");
       //   }
       // }
-
-
-      // Believe this to be a separate controller (joystick) with 
-      // an array of buttons
-      // if(buttons.getRawButton(4)){
-      //   speed = 0.5;
-      // }
-
-      //End Drive Train
-
-
-      //Railgun Commands
-      // if(buttons.getRawButton(10)){
-      //   startFront(-0.7);
-      // }else if(buttons.getRawButton(9)){
-      //   startFront(-1);
-      // }else if(buttons.getRawButton(11)){
-      //   startFront(0);
-      // }
-
-      // if(buttons.getRawButton(1)){
-      //   manualShoot(-0.3);
-      // }else if(buttons.getRawButton(5)){
-      //   manualShoot(0.3);
-      // }else{
-      //   manualShoot(0);
-      // }
-      //End Railgun Commands
-
-      //Start Colorwheel Commands Test
-      // if(buttons.getRawButton(3)){
-      //   wheelSpinner.set(0.3);
-      // 
-      // }// else if(buttons.getRawButton(7)){
-      //   wheelSpinner.set(0.2);
-      // 
-      // }else{
-      //   wheelSpinner.set(0);
-      // }
-
-      // if(buttons.getRawButton(2)){
-      //   wheelArm.set(0.4);
-      // }else if(buttons.getRawButton(6)){
-      //   wheelArm.set(-0.4);
-      // }else{
-      //   wheelArm.set(0);
-      // }
-
-      
-      //End Colorwheel Commands Stuff
     }
 
 
@@ -265,12 +219,12 @@ public class Robot extends TimedRobot
         pcmSolenoid_BucketArm.set(buttonPushed);
         if (buttonPushed)
         {
-            IsBucketArmRaised = true;
+            _IsBucketArmRaised = true;
             System.out.println("Trigger Pulled - Executing Raise Bucket Solenoid");
         }
         else
         {
-            IsBucketArmRaised = false;
+            _IsBucketArmRaised = false;
         }
         //  else
         //      System.out.println("Trigger Released - Releasing Raise Bucket Solenoid");
@@ -283,7 +237,7 @@ public class Robot extends TimedRobot
     //
     private void SetBucketState(boolean buttonPushed)
     {
-        if (!IsBucketArmRaised)
+        if (!_IsBucketArmRaised)
             return;
 
         pcmSolenoid_Bucket.set(buttonPushed);
@@ -341,24 +295,44 @@ public class Robot extends TimedRobot
     @Override
     public void autonomousInit() 
     {
-      // startTime = Timer.getFPGATimestamp();
+      // Set an initial 5 second pause before begining autonomous drive
+      _autonomousDriveStartTime = System.currentTimeMillis() + 5000;
+
+      // Set the drive stop time to 4 seconds after 5 second pause (aka 9 seconds in future)
+      _autonomousStopDriveTime = _autonomousDriveStartTime + 6000;
     }
 
     @Override
     public void autonomousPeriodic() 
     {
-      // double currentTime = Timer.getFPGATimestamp();
-      // double time = currentTime - startTime;
+      long timeDiffSecs = 0;
+      long currentTime = System.currentTimeMillis();
 
-      // if(time < 2){
-      //   manualDrive(0.5, 0);
 
-      // }else if(time < 3){
-      //   manualDrive(0, 0.3);
+      // if we are still in 5 second wait, then set drive speed to 0, log message and return;
+      if (currentTime < _autonomousDriveStartTime)
+      {
+        timeDiffSecs = (_autonomousDriveStartTime - currentTime) / 1000;
+        System.out.println("Autonomous drive pausing for " + timeDiffSecs + " seconds");
 
-      // }else{
-      //   manualDrive(0, 0);
-      // }
+        _drive.arcadeDrive(0, 0);
+        return;
+      }
+
+
+      // 
+      // If we're past 5 second pause, drive in reverse for 6 seconds then stop
+      //
+      timeDiffSecs = (_autonomousStopDriveTime - currentTime) / 1000;
+      if (currentTime < _autonomousStopDriveTime)
+      {
+          _drive.arcadeDrive(-0.5, 0);
+          System.out.println("Autonomous drive running for " + timeDiffSecs + " seconds");
+      }
+      else {
+          _drive.arcadeDrive(0, 0);
+          System.out.println("Autonomous drive complete");
+        }
     }
 
     @Override
