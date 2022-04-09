@@ -17,6 +17,7 @@ import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.PneumaticsModuleType;
 import edu.wpi.first.wpilibj.Solenoid;
 import edu.wpi.first.wpilibj.TimedRobot;
+import edu.wpi.first.wpilibj.Timer;
 // import edu.wpi.first.wpilibj.Timer;0
 import edu.wpi.first.wpilibj.drive.DifferentialDrive;
 
@@ -57,10 +58,6 @@ public class Robot extends TimedRobot
     // Variable to help determine state of bucket arm raised or lowered 
     private boolean _IsBucketArmRaised = false;
     
-    // Time Variables for Autonomous drive
-    private long _autonomousDriveStartTime;
-    private long _autonomousStopDriveTime;
-
     // private double startTime;
     //private static final double kHoldDistance = 12.0; //These are for Distance Sensors
     //private static final double kValueToInches = 0.125;
@@ -86,7 +83,7 @@ public class Robot extends TimedRobot
         armMotor_Left.configClosedloopRamp(0.5);
         armMotor_Right.configClosedloopRamp(0.5);
 
-        //New Code as of 8:30 after new code update
+        // Set motor neutral mode to Break when motor speed is 0.0
         armMotor_Left.setNeutralMode(NeutralMode.Brake);
         armMotor_Right.setNeutralMode(NeutralMode.Brake);
 
@@ -133,6 +130,9 @@ public class Robot extends TimedRobot
       // Set Arm State from Button-6 and Button-4
       HandleHangArmState(stick);
 
+      // Set Arm State from Button-9
+      HandleHangArmDownSLOWLY(stick);
+
       // Handle POV Button Events (Not being used)
       HandlePOVButton(stick);
 
@@ -177,7 +177,7 @@ public class Robot extends TimedRobot
 
 
     // 
-    // Set Manual Drive Move and Turn Speeds
+    // Handle Hang Arm State for buttons 7 & 8
     //
     private void HandleHangArmState(Joystick stick) 
     {
@@ -196,7 +196,7 @@ public class Robot extends TimedRobot
                 // _armDrive.arcadeDrive(moveSpeed, 0);
                 // _armDrive.setDeadband(0.05);
                 System.out.println("UP Arm Speed: L(" + armMotor_Left.get() + ") R(" + armMotor_Right.get() + ")");
-              }
+            }
 
             //Move the motors down
             if (stick.getRawButton(4))
@@ -211,6 +211,30 @@ public class Robot extends TimedRobot
             armMotor_Right.set(0);
             armMotor_Left.set(0);
             // System.out.println("NO Arm Speed: L(" + armMotor_Left.get() + ") R(" + armMotor_Right.get() + ")");
+        }
+    }
+
+    // 
+    // Run Hanging motor slow while hanging to prevent slow dropping
+    //
+    private void HandleHangArmDownSLOWLY(Joystick stick) 
+    {
+        double moveSpeed = 4.0;
+
+        // Only activate forward/reverse motors when buttons are pressed:
+        // Button-9 - Toggle 
+        if (stick.getRawButton(9))
+        {
+            //Move the hang arm motors down (Collapse arms)
+            armMotor_Right.set(-moveSpeed);
+            armMotor_Left.set(-moveSpeed/4);
+            System.out.println("DOWN Arm Speed: L(" + armMotor_Left.get() + ") R(" + armMotor_Right.get() + ")");
+        }
+        else
+        {
+            armMotor_Right.set(0);
+            armMotor_Left.set(0);
+            //System.out.println("NO Arm Speed: L(" + armMotor_Left.get() + ") R(" + armMotor_Right.get() + ")");
         }
     }
 
@@ -237,8 +261,8 @@ public class Robot extends TimedRobot
 
     //
     // Method to raise and lower the bucket
-    // True  - Raise bucket
-    // False - Lower bucket
+    // True  - Lowers bucket (Dump)
+    // False - Raises bucket
     //
     private void SetBucketState(boolean buttonPushed)
     {
@@ -283,64 +307,154 @@ public class Robot extends TimedRobot
         }
     }
 
-    public void manualShoot(final double shoot) 
-    {
-      // leftBallMotor2.set(-shoot); //Port 6
-      // rightBallMotor2.set(shoot); //Port 7
-    }
-
-    public void startFront(final double shoot)
-    {
-      // leftBallMotor1.set(shoot); //Port 4
-      // rightBallMotor1.set(-shoot); //Port 5
-    }
 
 
+    //
+    // Start Autonomous Drive Logic
+    //
+    private long _autonomousStartPauseTime;
+    private long _autonomousBackupDriveTime;
+    private double _startTime;
 
     @Override
     public void autonomousInit() 
     {
-      // Set an initial 5 second pause before begining autonomous drive
-      _autonomousDriveStartTime = System.currentTimeMillis() + 5000;
+        //
+        // Initialize NEW Autonomous routine
+        //
+        _startTime = Timer.getFPGATimestamp();
+        SetBucketState(false);
 
-      // Set the drive stop time to 4 seconds after 5 second pause (aka 9 seconds in future)
-      _autonomousStopDriveTime = _autonomousDriveStartTime + 4000; // Original value 6000
+
+        // 
+        // Initialize OLD Autonomous routine
+        //
+        // Set an initial 1 second pause before begining autonomous drive (Used only for original AutonomousBackup)
+        _autonomousStartPauseTime = System.currentTimeMillis() + 1000;
+
+        // Set the drive stop time to 4 seconds after 5 second pause (aka 9 seconds in future)
+        _autonomousBackupDriveTime = _autonomousStartPauseTime + 4000; // Original value 6000
     }
 
     @Override
-    public void autonomousPeriodic() 
+    public void autonomousPeriodic()
     {
-      double reverseSpeed = -0.5;
-      long timeDiffSecs = 0;
-      long currentTime = System.currentTimeMillis();
+        // New Backup and Score Autonomous Routine
+        AutonomousBackupAndScore();
 
+        // Original Autonomous Routine
+        // AutonomousBackup();
+    }
 
-      // if we are still in 5 second wait, then set drive speed to 0, log message and return;
-      if (currentTime < _autonomousDriveStartTime)
-      {
-        timeDiffSecs = (_autonomousDriveStartTime - currentTime) / 1000;
-        System.out.println("Autonomous drive pausing for " + timeDiffSecs + " seconds");
-
-        _drive.arcadeDrive(0, 0);
-        return;
-      }
-
-
-      // 
-      // If we're past 5 second pause, drive in reverse for 4 seconds then stop
-      //
-      timeDiffSecs = (_autonomousStopDriveTime - currentTime) / 1000;
-      if (currentTime < _autonomousStopDriveTime)
-      {
-                           //Turn, Drive speed
-          _drive.arcadeDrive(0, reverseSpeed);
-          System.out.println("Autonomous drive (speed:" + reverseSpeed + ") running for " + timeDiffSecs + " seconds");
-      }
-      else {
-          _drive.arcadeDrive(0, 0);
-          System.out.println("Autonomous drive complete");
+    //
+    // New  Autonomous Backup and Score routine
+    //
+    private void AutonomousBackupAndScore()
+    {
+        double driveSpeed = 0.5;
+        double currentTime = Timer.getFPGATimestamp();
+        double time = currentTime - _startTime;
+    
+        // Pause for 1 second
+        if (time < 1)
+        {
+            _drive.arcadeDrive(0, 0);
+            System.out.println("Pausing for 1 second");
+        }
+        // Reverse for 4 seconds
+        else if (time >=1 && time < 5)
+        {
+            _drive.arcadeDrive(0, -driveSpeed);
+            System.out.println("Autonomous drive (speed:" + -driveSpeed + ") running for " + (long)time + " seconds");
+        }
+        // Raise bucket arm drive forward for 3.5 seconds
+        else if (time >= 5 && time < 8.5)
+        {
+            SetBucketArmState(true);
+            _drive.arcadeDrive(0, driveSpeed);
+            System.out.println("Autonomous drive (speed:" + driveSpeed + ") running for " + (long)time + " seconds");
+        }
+        // Pause for 0.5 seconds
+        else if (time >= 8.5 && time < 9)
+        {
+            _drive.arcadeDrive(0, 0);
+            System.out.println(" Stopped and pausing for 0.5 seconds");
+        }
+        // Dump the bucket
+        else if (time >= 9 & time < 10)
+        {
+            SetBucketState(true);
+        }
+        // Pause for 1 second
+        else if (time >= 10 && time < 11)
+        {
+            SetBucketState(false);
+            System.out.println("Pausing for 1 seconds");
+        }
+        // Dump the bucket
+        else if (time >= 11 & time < 12)
+        {
+            SetBucketState(true);
+        }
+        // Pause for 1 second
+        else if (time >= 12 && time < 13)
+        {
+            SetBucketState(false);
+            System.out.println("Pausing for 1 seconds");
+        }
+        // Reverse for 4 seconds
+        else if (time >=13 && time < 17.5)
+        {
+            _drive.arcadeDrive(0, -driveSpeed); // Backup for 4 seconds
+            SetBucketState(false);
+            SetBucketArmState(false);
+            System.out.println("Autonomous drive (speed:" + -driveSpeed + ") running for " + (long)time + " seconds");
+        }
+        else {
+            _drive.arcadeDrive(0, 0);
+            SetBucketState(false);
+            SetBucketArmState(false);
+            // System.out.println("Autonomous drive complete");
         }
     }
+
+    //
+    // Orriginal Autonomous Backup routine
+    //
+    private void AutonomousBackup()
+    {
+        double reverseSpeed = -0.5;
+        long timeDiffSecs = 0;
+        long currentTime = System.currentTimeMillis();
+
+
+        // if we are still in 5 second wait, then set drive speed to 0, log message and return;
+        if (currentTime < _autonomousStartPauseTime)
+        {
+          timeDiffSecs = (_autonomousStartPauseTime - currentTime) / 1000;
+          System.out.println("Autonomous drive pausing for " + timeDiffSecs + " seconds");
+
+          _drive.arcadeDrive(0, 0);
+          return;
+        }
+
+
+        // 
+        // If we're past 5 second pause, drive in reverse for 4 seconds then stop
+        //
+        timeDiffSecs = (_autonomousBackupDriveTime - currentTime) / 1000;
+        if (currentTime < _autonomousBackupDriveTime)
+        {
+                             //Turn, Drive speed
+            _drive.arcadeDrive(0, reverseSpeed);
+            System.out.println("Autonomous drive (speed:" + reverseSpeed + ") running for " + timeDiffSecs + " seconds");
+        }
+        else {
+            _drive.arcadeDrive(0, 0);
+            System.out.println("Autonomous drive complete");
+        }
+    }
+
 
     @Override
     public void testInit() 
