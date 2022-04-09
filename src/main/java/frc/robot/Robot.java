@@ -7,6 +7,7 @@
 
 package frc.robot;
 
+import com.ctre.phoenix.motorcontrol.NeutralMode;
 import com.ctre.phoenix.motorcontrol.can.WPI_TalonSRX;
 //import com.fasterxml.jackson.databind.ser.std.StdKeySerializers.Default;
 
@@ -85,6 +86,10 @@ public class Robot extends TimedRobot
         armMotor_Left.configClosedloopRamp(0.5);
         armMotor_Right.configClosedloopRamp(0.5);
 
+        //New Code as of 8:30 after new code update
+        armMotor_Left.setNeutralMode(NeutralMode.Brake);
+        armMotor_Right.setNeutralMode(NeutralMode.Brake);
+
         // CameraServer.getInstance();
     }
 
@@ -161,7 +166,7 @@ public class Robot extends TimedRobot
       
         // Adjust speed to tune movements
         turn = turn * speed;
-        move = move * 0.9 * speed;
+        move = move * speed;
 
         //  System.out.println("Move Speed: " + (move));
         //  System.out.println("Turn Speed: " + (turn));
@@ -176,7 +181,7 @@ public class Robot extends TimedRobot
     //
     private void HandleHangArmState(Joystick stick) 
     {
-        double moveSpeed = 4.0;
+        double moveSpeed = 45.0;
 
         // Only activate forward/reverse motors when buttons are pressed:
         // Button-4 - Lower arms
@@ -186,8 +191,8 @@ public class Robot extends TimedRobot
             //Move the motors Up
             if (stick.getRawButton(6))
             {
-                armMotor_Right.set(moveSpeed/4);
-                armMotor_Left.set(moveSpeed);
+                armMotor_Right.set(moveSpeed);
+                armMotor_Left.set(moveSpeed/7.5);
                 // _armDrive.arcadeDrive(moveSpeed, 0);
                 // _armDrive.setDeadband(0.05);
                 System.out.println("UP Arm Speed: L(" + armMotor_Left.get() + ") R(" + armMotor_Right.get() + ")");
@@ -196,8 +201,8 @@ public class Robot extends TimedRobot
             //Move the motors down
             if (stick.getRawButton(4))
             {
-                armMotor_Right.set(-moveSpeed/4);
-                armMotor_Left.set(-moveSpeed);
+                armMotor_Right.set(-moveSpeed);
+                armMotor_Left.set(-moveSpeed/7.5);
                 System.out.println("DOWN Arm Speed: L(" + armMotor_Left.get() + ") R(" + armMotor_Right.get() + ")");
             }
         }
@@ -299,7 +304,7 @@ public class Robot extends TimedRobot
       _autonomousDriveStartTime = System.currentTimeMillis() + 5000;
 
       // Set the drive stop time to 4 seconds after 5 second pause (aka 9 seconds in future)
-      _autonomousStopDriveTime = _autonomousDriveStartTime + 6000;
+      _autonomousStopDriveTime = _autonomousDriveStartTime + 4000; // Original value 6000
     }
 
     @Override
@@ -322,12 +327,13 @@ public class Robot extends TimedRobot
 
 
       // 
-      // If we're past 5 second pause, drive in reverse for 6 seconds then stop
+      // If we're past 5 second pause, drive in reverse for 4 seconds then stop
       //
       timeDiffSecs = (_autonomousStopDriveTime - currentTime) / 1000;
       if (currentTime < _autonomousStopDriveTime)
       {
-          _drive.arcadeDrive(reverseSpeed, 0);
+                           //Turn, Drive speed
+          _drive.arcadeDrive(0, reverseSpeed);
           System.out.println("Autonomous drive (speed:" + reverseSpeed + ") running for " + timeDiffSecs + " seconds");
       }
       else {
